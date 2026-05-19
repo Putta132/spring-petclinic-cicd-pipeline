@@ -59,10 +59,10 @@ All EC2 instances deployed on **AWS ap-south-1** with least-privilege Security G
 
 | Instance | Inbound Rule |
 |---|---|
-| Jenkins | Port 8080 from anywhere (UI) + Port 22 from admin IP |
-| SonarQube | Port 9000 from Jenkins SG only |
-| Nexus | Port 8081 from Jenkins SG only |
-| Tomcat | Port 8080 from anywhere (app) + Jenkins SG (deploy) |
+| Jenkins | Port 8080, Port 22 |
+| SonarQube | Port 9000 |
+| Nexus | Port 8081 |
+| Tomcat | Port 8080 |
 
 SonarQube and Nexus are **not publicly accessible** — only Jenkins can reach them.
 
@@ -134,7 +134,7 @@ tomcat_url    = "http://13.x.x.x:8080"
 
 ---
 
-## ⚙️ Manual Setup Steps
+## ⚙️ Resources Used
 
 ### 1. Jenkins EC2
 - Launch t3.medium, Ubuntu 22.04, run `scripts/jenkins-setup.sh` as user-data
@@ -156,7 +156,7 @@ tomcat_url    = "http://13.x.x.x:8080"
 
 ### 4. Tomcat EC2
 - Launch t3.micro, run `scripts/tomcat-setup.sh` as user-data
-- Manager app configured with `admin/Admin@123` (change in production)
+- Manager app configured with `prateek/1234`
 - Add Tomcat credentials to Jenkins
 
 ### 5. Jenkins Pipeline Job
