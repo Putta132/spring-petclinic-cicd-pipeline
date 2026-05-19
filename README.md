@@ -190,6 +190,34 @@ tomcat_url    = "http://13.x.x.x:8080"
 
 ---
 
+## 🔐 Security Recommendations
+
+> These are observed gaps from the current setup. Addressing these before moving to production is strongly recommended.
+
+1. **SonarQube Security Rating is D** — There are open security issues flagged by SonarQube analysis. Review and fix all critical/blocker security hotspots before deploying to production.
+2. **Enable HTTPS/TLS** — All services (Jenkins, SonarQube, Nexus, Tomcat) are currently running on HTTP. Set up SSL certificates (via Let's Encrypt or ACM) to encrypt traffic in transit.
+3. **Restrict Security Group Rules** — Tighten EC2 inbound rules to allow only necessary ports from trusted IP ranges. Avoid `0.0.0.0/0` except where absolutely required (e.g. public-facing app).
+4. **Credential Rotation** — Rotate Jenkins and Nexus credentials regularly. Always store secrets in **Jenkins Credentials Manager** — never hardcode passwords in the Jenkinsfile or scripts.
+5. **SonarQube Embedded Database** — SonarQube is currently using its built-in H2 database which is not recommended for production. Migrate to **PostgreSQL** for reliability, persistence, and better performance.
+
+---
+
+## 🛠️ Troubleshooting
+
+| Issue | Fix |
+|---|---|
+| SonarQube Quality Gate not appearing | Ensure the `sonar.projectKey` matches the project key configured in SonarQube |
+| Nexus upload fails | Verify `credentialsId` in Jenkinsfile matches the stored Nexus credentials ID in Jenkins |
+| Maven build slow | Add Maven cache or configure a local `.m2` mirror to avoid re-downloading dependencies |
+| Pipeline doesn't trigger | Check Git webhook or polling configuration in the Jenkins job settings |
+| SonarQube takes too long to start | SonarQube needs at least 2GB RAM — ensure you are using t3.medium or higher |
+| Tomcat deploy fails | Confirm `manager-script` role is assigned to the Tomcat user in `tomcat-users.xml` |
+| Jenkins can't reach SonarQube/Nexus | Verify Security Group inbound rules allow traffic from the Jenkins EC2 Security Group |
+
+---
+
+---
+
 ## 👨‍💻 Author
 
 **Prateek Kulkarni**
