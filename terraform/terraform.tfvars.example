@@ -1,0 +1,5 @@
+# Copy to terraform.tfvars — never commit that file to git
+aws_region       = "ap-south-1"
+project_name     = "petclinic-cicd"
+key_name         = "your-keypair-name"
+allowed_ssh_cidr = "YOUR_IP/32"
