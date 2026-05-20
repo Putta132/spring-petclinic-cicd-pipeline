@@ -1,5 +1,13 @@
 # 🚀 Spring PetClinic — Jenkins CI/CD Pipeline
 
+![Jenkins](https://img.shields.io/badge/Jenkins-D24939?style=for-the-badge&logo=jenkins&logoColor=white)
+![Maven](https://img.shields.io/badge/Maven-C71A36?style=for-the-badge&logo=apache-maven&logoColor=white)
+![SonarQube](https://img.shields.io/badge/SonarQube-4E9BCD?style=for-the-badge&logo=sonarqube&logoColor=white)
+![Nexus](https://img.shields.io/badge/Nexus-1B1C30?style=for-the-badge&logo=sonatype&logoColor=white)
+![Tomcat](https://img.shields.io/badge/Tomcat-F8DC75?style=for-the-badge&logo=apache-tomcat&logoColor=black)
+![AWS](https://img.shields.io/badge/AWS-232F3E?style=for-the-badge&logo=amazon-aws&logoColor=white)
+
+
 A fully automated CI/CD pipeline for the **Spring PetClinic** application built on AWS. The pipeline compiles, tests, performs static code analysis, packages, stores artifacts, and deploys — all triggered from a single Jenkins job.
 
 ---
