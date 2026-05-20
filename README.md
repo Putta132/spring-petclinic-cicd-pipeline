@@ -54,10 +54,10 @@ Developer pushes code to GitHub
 
 | Server | Tool | EC2 Type | Port |
 |---|---|---|---|
-| Jenkins Server | Jenkins 2.x | t3.medium | 8080 |
-| Code Quality Server | SonarQube 10.x | t3.medium | 9000 |
-| Artifact Repository | Nexus OSS 3.x | t3.medium | 8081 |
-| Application Server | Apache Tomcat 10.x | t3.micro | 8080 |
+| Jenkins Server | Jenkins 2.x | c7i.flex.large | 8080 |
+| Code Quality Server | SonarQube 10.x | c7i.flex.large | 9000 |
+| Artifact Repository | Nexus OSS 3.x | c7i.flex.large | 8081 |
+| Application Server | Apache Tomcat 10.x | c7i.flex.large | 8080 |
 
 All EC2 instances deployed on **AWS ap-south-1** with least-privilege Security Groups — each tool only accepts traffic from the sources that need it.
 
@@ -145,25 +145,25 @@ tomcat_url    = "http://13.x.x.x:8080"
 ## ⚙️ Resources Used
 
 ### 1. Jenkins EC2
-- Launch t3.medium, Ubuntu 22.04, run `scripts/jenkins-setup.sh` as user-data
+- Launch c7i.flex.large, Ubuntu 22.04, run `scripts/jenkins-setup.sh` as user-data
 - Install plugins: **Maven Integration**, **SonarQube Scanner**, **Nexus Artifact Uploader**, **Deploy to container**
 - Configure: JDK17, Maven3 under Global Tool Configuration
 - Add credentials: `nexus-credentials`, `tomcat-credentials` in Jenkins Credentials Manager
 - Add SonarQube server under Manage Jenkins → Configure System
 
 ### 2. SonarQube EC2
-- Launch t3.medium, run `scripts/sonarqube-setup.sh` as user-data
+- Launch c7i.flex.large, run `scripts/sonarqube-setup.sh` as user-data
 - Login at `http://<IP>:9000` (admin/admin → change password)
 - Generate token → add to Jenkins as SonarQube credential
 
 ### 3. Nexus EC2
-- Launch t3.medium, run `scripts/nexus-setup.sh` as user-data
+- Launch c7i.flex.large, run `scripts/nexus-setup.sh` as user-data
 - Login at `http://<IP>:8081`
 - Create a Maven hosted repository named `spring-petclinic-releases`
 - Add Nexus credentials to Jenkins
 
 ### 4. Tomcat EC2
-- Launch t3.micro, run `scripts/tomcat-setup.sh` as user-data
+- Launch c7i.flex.large, run `scripts/tomcat-setup.sh` as user-data
 - Manager app configured with `prateek/1234`
 - Add Tomcat credentials to Jenkins
 
@@ -218,7 +218,7 @@ tomcat_url    = "http://13.x.x.x:8080"
 | Nexus upload fails | Verify `credentialsId` in Jenkinsfile matches the stored Nexus credentials ID in Jenkins |
 | Maven build slow | Add Maven cache or configure a local `.m2` mirror to avoid re-downloading dependencies |
 | Pipeline doesn't trigger | Check Git webhook or polling configuration in the Jenkins job settings |
-| SonarQube takes too long to start | SonarQube needs at least 2GB RAM — ensure you are using t3.medium or higher |
+| SonarQube takes too long to start | SonarQube needs at least 2GB RAM — ensure you are using c7i.flex.large or higher |
 | Tomcat deploy fails | Confirm `manager-script` role is assigned to the Tomcat user in `tomcat-users.xml` |
 | Jenkins can't reach SonarQube/Nexus | Verify Security Group inbound rules allow traffic from the Jenkins EC2 Security Group |
 
