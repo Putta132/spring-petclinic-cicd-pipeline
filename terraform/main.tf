@@ -12,61 +12,46 @@ provider "aws" {
   region = var.aws_region
 }
 
-# ── VPC ───────────────────────────────────────────────────────────────────────
-resource "aws_vpc" "main" {
-  cidr_block           = "10.0.0.0/16"
-  enable_dns_support   = true
-  enable_dns_hostnames = true
-  tags = { Name = "${var.project_name}-vpc" }
-}
-
-resource "aws_internet_gateway" "igw" {
-  vpc_id = aws_vpc.main.id
-  tags   = { Name = "${var.project_name}-igw" }
-}
-
-resource "aws_subnet" "public" {
-  vpc_id                  = aws_vpc.main.id
-  cidr_block              = "10.0.1.0/24"
-  availability_zone       = "${var.aws_region}a"
-  map_public_ip_on_launch = true
-  tags = { Name = "${var.project_name}-public-subnet" }
-}
-
-resource "aws_route_table" "public" {
-  vpc_id = aws_vpc.main.id
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.igw.id
-  }
-  tags = { Name = "${var.project_name}-public-rt" }
-}
-
-resource "aws_route_table_association" "public" {
-  subnet_id      = aws_subnet.public.id
-  route_table_id = aws_route_table.public.id
-}
-
-# ── Security Groups ───────────────────────────────────────────────────────────
-
-# Jenkins SG — port 8080 from anywhere, SSH from admin only
-resource "aws_security_group" "jenkins" {
-  name   = "${var.project_name}-jenkins-sg"
-  vpc_id = aws_vpc.main.id
+# ── Security Group ────────────────────────────────────────────────────────────
+# Single SG — opens all required ports for Jenkins, SonarQube, Nexus, Tomcat
+resource "aws_security_group" "cicd" {
+  name        = "cicd-pipeline-sg"
+  description = "Security group for CI/CD pipeline EC2 instances"
 
   ingress {
+    description = "Jenkins"
     from_port   = 8080
     to_port     = 8080
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
-    description = "Jenkins UI"
   }
   ingress {
+    description = "SonarQube"
+    from_port   = 9000
+    to_port     = 9000
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  ingress {
+    description = "Nexus"
+    from_port   = 8081
+    to_port     = 8081
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  ingress {
+    description = "Tomcat"
+    from_port   = 8085
+    to_port     = 8085
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  ingress {
+    description = "SSH"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = [var.allowed_ssh_cidr]
-    description = "SSH from admin"
+    cidr_blocks = ["0.0.0.0/0"]
   }
   egress {
     from_port   = 0
@@ -74,144 +59,50 @@ resource "aws_security_group" "jenkins" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-  tags = { Name = "${var.project_name}-jenkins-sg" }
+
+  tags = { Name = "cicd-pipeline-sg" }
 }
 
-# SonarQube SG — port 9000 from Jenkins SG only
-resource "aws_security_group" "sonarqube" {
-  name   = "${var.project_name}-sonarqube-sg"
-  vpc_id = aws_vpc.main.id
-
-  ingress {
-    from_port       = 9000
-    to_port         = 9000
-    protocol        = "tcp"
-    security_groups = [aws_security_group.jenkins.id]
-    description     = "SonarQube from Jenkins only"
-  }
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = [var.allowed_ssh_cidr]
-    description = "SSH from admin"
-  }
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  tags = { Name = "${var.project_name}-sonarqube-sg" }
-}
-
-# Nexus SG — port 8081 from Jenkins SG only
-resource "aws_security_group" "nexus" {
-  name   = "${var.project_name}-nexus-sg"
-  vpc_id = aws_vpc.main.id
-
-  ingress {
-    from_port       = 8081
-    to_port         = 8081
-    protocol        = "tcp"
-    security_groups = [aws_security_group.jenkins.id]
-    description     = "Nexus from Jenkins only"
-  }
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = [var.allowed_ssh_cidr]
-    description = "SSH from admin"
-  }
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  tags = { Name = "${var.project_name}-nexus-sg" }
-}
-
-# Tomcat SG — port 8080 from anywhere (public app)
-resource "aws_security_group" "tomcat" {
-  name   = "${var.project_name}-tomcat-sg"
-  vpc_id = aws_vpc.main.id
-
-  ingress {
-    from_port   = 8080
-    to_port     = 8080
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-    description = "Tomcat app — public access"
-  }
-  ingress {
-    from_port       = 8080
-    to_port         = 8080
-    protocol        = "tcp"
-    security_groups = [aws_security_group.jenkins.id]
-    description     = "Tomcat deploy from Jenkins"
-  }
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = [var.allowed_ssh_cidr]
-    description = "SSH from admin"
-  }
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  tags = { Name = "${var.project_name}-tomcat-sg" }
-}
-
-# ── EC2 Instances ─────────────────────────────────────────────────────────────
+# ── 4 EC2 Instances ───────────────────────────────────────────────────────────
 
 resource "aws_instance" "jenkins" {
   ami                    = var.ami_id
-  instance_type          = "t3.medium"   # Jenkins needs at least 2GB RAM
-  subnet_id              = aws_subnet.public.id
-  vpc_security_group_ids = [aws_security_group.jenkins.id]
+  instance_type          = var.instance_type
   key_name               = var.key_name
+  vpc_security_group_ids = [aws_security_group.cicd.id]
   user_data              = file("${path.module}/../scripts/jenkins-setup.sh")
-  tags                   = { Name = "${var.project_name}-jenkins" }
+  tags                   = { Name = "jenkins" }
 }
 
 resource "aws_instance" "sonarqube" {
   ami                    = var.ami_id
-  instance_type          = "t3.medium"   # SonarQube needs at least 2GB RAM
-  subnet_id              = aws_subnet.public.id
-  vpc_security_group_ids = [aws_security_group.sonarqube.id]
+  instance_type          = var.instance_type
   key_name               = var.key_name
+  vpc_security_group_ids = [aws_security_group.cicd.id]
   user_data              = file("${path.module}/../scripts/sonarqube-setup.sh")
-  tags                   = { Name = "${var.project_name}-sonarqube" }
+  tags                   = { Name = "sonarqube" }
 }
 
 resource "aws_instance" "nexus" {
   ami                    = var.ami_id
-  instance_type          = "t3.medium"
-  subnet_id              = aws_subnet.public.id
-  vpc_security_group_ids = [aws_security_group.nexus.id]
+  instance_type          = var.instance_type
   key_name               = var.key_name
+  vpc_security_group_ids = [aws_security_group.cicd.id]
   user_data              = file("${path.module}/../scripts/nexus-setup.sh")
-  tags                   = { Name = "${var.project_name}-nexus" }
+  tags                   = { Name = "nexus" }
 }
 
 resource "aws_instance" "tomcat" {
   ami                    = var.ami_id
-  instance_type          = "t3.micro"
-  subnet_id              = aws_subnet.public.id
-  vpc_security_group_ids = [aws_security_group.tomcat.id]
+  instance_type          = var.instance_type
   key_name               = var.key_name
+  vpc_security_group_ids = [aws_security_group.cicd.id]
   user_data              = file("${path.module}/../scripts/tomcat-setup.sh")
-  tags                   = { Name = "${var.project_name}-tomcat" }
+  tags                   = { Name = "tomcat" }
 }
 
 # ── Outputs ───────────────────────────────────────────────────────────────────
 output "jenkins_url"   { value = "http://${aws_instance.jenkins.public_ip}:8080" }
 output "sonarqube_url" { value = "http://${aws_instance.sonarqube.public_ip}:9000" }
 output "nexus_url"     { value = "http://${aws_instance.nexus.public_ip}:8081" }
-output "tomcat_url"    { value = "http://${aws_instance.tomcat.public_ip}:8080" }
+output "tomcat_url"    { value = "http://${aws_instance.tomcat.public_ip}:8085" }
