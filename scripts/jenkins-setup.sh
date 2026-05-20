@@ -1,7 +1,9 @@
 #!/bin/bash
 
-# --- Java 21 ---
+# --- system update ---
 sudo apt update -y
+
+# --- Java 21 ---
 sudo apt install -y openjdk-21-jdk
 
 # --- Maven ---
@@ -13,9 +15,7 @@ sudo wget -O /etc/apt/keyrings/jenkins-keyring.asc \
 echo "deb [signed-by=/etc/apt/keyrings/jenkins-keyring.asc]" \
   https://pkg.jenkins.io/debian-stable binary/ | sudo tee \
   /etc/apt/sources.list.d/jenkins.list > /dev/null
-sudo apt update
-sudo apt install jenkins
-
+sudo apt install jenkins -y
 
 systemctl enable jenkins
 systemctl start jenkins
