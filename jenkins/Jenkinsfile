@@ -1,123 +1,90 @@
+* git checkout, compile, test script:-
 pipeline {
     agent any
 
-    tools {
-        maven 'Maven3'
-        jdk 'JDK17'
+    stages {
+        stage('gitcheckout') {
+            steps {
+              git branch: 'main', url: 'https://github.com/Putta132/spring-petclinic.git'
+            }
+        }
+        stage('compile'){
+            steps{
+                sh 'mvn compile'
+            }
+        }
+        stage('test'){
+            steps{
+                sh 'mvn test'
+            }
+        }
     }
+}
 
-    environment {
-        // SonarQube
-        SONAR_HOST     = 'http://<SONARQUBE_EC2_IP>:9000'
-        SONAR_PROJECT  = 'spring-petclinic'
+* Sonarqube, package, nexus artifact, tomcat scripts:-
 
-        // Nexus
-        NEXUS_HOST     = '<NEXUS_EC2_IP>:8081'
-        NEXUS_REPO     = 'spring-petclinic-releases'
-        NEXUS_CREDS    = credentials('nexus-credentials')
-
-        // Tomcat
-        TOMCAT_HOST    = 'http://<TOMCAT_EC2_IP>:8080'
-        TOMCAT_CREDS   = credentials('tomcat-credentials')
-    }
+pipeline {
+    agent any
 
     stages {
 
-        stage('Checkout') {
+        stage('gitcheckout') {
             steps {
-                echo '📥 Cloning source code from GitHub...'
-                checkout scm
+                git branch: 'main',
+                url: 'https://github.com/Putta132/spring-petclinic.git'
             }
         }
 
-        stage('Compile') {
+        stage('generating package') {
             steps {
-                echo '🔨 Compiling the application...'
-                sh 'mvn clean compile -DskipTests'
+                sh 'mvn clean package -DskipTests'
             }
         }
 
-        stage('Test') {
+        stage('sonarqube') {
             steps {
-                echo '🧪 Running unit tests...'
-                sh 'mvn test'
-            }
-            post {
-                always {
-                    junit '**/target/surefire-reports/*.xml'
+                withSonarQubeEnv('sonarqube') {
+                    sh 'mvn sonar:sonar'
                 }
             }
         }
 
-        stage('Code Quality — SonarQube') {
+        stage('nexus artifact') {
             steps {
-                echo '🔍 Running SonarQube analysis...'
-                withSonarQubeEnv('SonarQube') {
-                    sh """
-                        mvn sonar:sonar \
-                          -Dsonar.projectKey=${SONAR_PROJECT} \
-                          -Dsonar.host.url=${SONAR_HOST} \
-                          -Dsonar.java.binaries=target/classes
-                    """
+
+                nexusArtifactUploader(
+                    artifacts: [[
+                        artifactId: 'spring-boot-starter-parent',
+                        classifier: '',
+                        file: 'target/spring-petclinic-4.0.0-SNAPSHOT.jar',
+                        type: 'jar'
+                    ]],
+
+                    credentialsId: 'nexus',
+                    groupId: 'org.springframework.boot',
+                    nexusUrl: '3.110.205.101:8081',
+                    nexusVersion: 'nexus3',
+                    protocol: 'http',
+                    repository: 'spring-pet-clinic',
+                    version: 'SNAPSHOT-1.0'
+                )
+            }
+        }
+
+           stage('deploy') {
+            steps {
+
+                sshagent(['tomcat-credentials']) {
+
+                    sh '''
+                    scp -o StrictHostKeyChecking=no target/spring-petclinic.war ubuntu@3.111.43.129:/home/ubuntu/apache-tomcat-10.1.42/webapps
+
+                    ssh -o StrictHostKeyChecking=no ubuntu@3.111.43.129 /home/ubuntu/apache-tomcat-10.1.42/bin/shutdown.sh
+
+                    ssh -o StrictHostKeyChecking=no ubuntu@3.111.43.129 /home/ubuntu/apache-tomcat-10.1.42/bin/startup.sh
+                    '''
                 }
             }
-        }
-
-        stage('Quality Gate') {
-            steps {
-                echo '✅ Waiting for SonarQube Quality Gate result...'
-                timeout(time: 2, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
-                }
-            }
-        }
-
-        stage('Package') {
-            steps {
-                echo '📦 Packaging application as WAR...'
-                sh 'mvn package -DskipTests'
-                archiveArtifacts artifacts: 'target/*.war', fingerprint: true
-            }
-        }
-
-        stage('Upload to Nexus') {
-            steps {
-                echo '⬆️ Uploading artifact to Nexus Repository...'
-                sh """
-                    mvn deploy \
-                      -DskipTests \
-                      -DaltDeploymentRepository=${NEXUS_REPO}::default::http://${NEXUS_HOST}/repository/${NEXUS_REPO}/ \
-                      -Dusername=${NEXUS_CREDS_USR} \
-                      -Dpassword=${NEXUS_CREDS_PSW}
-                """
-            }
-        }
-
-        stage('Deploy to Tomcat') {
-            steps {
-                echo '🚀 Deploying WAR to Tomcat server...'
-                deploy adapters: [
-                    tomcat9(
-                        credentialsId: 'tomcat-credentials',
-                        path: '',
-                        url: "${TOMCAT_HOST}"
-                    )
-                ],
-                contextPath: '/petclinic',
-                war: 'target/*.war'
-            }
-        }
-    }
-
-    post {
-        success {
-            echo '🎉 Pipeline completed successfully! App deployed to Tomcat.'
-        }
-        failure {
-            echo '❌ Pipeline failed. Check the logs above.'
-        }
-        always {
-            cleanWs()
         }
     }
 }
