@@ -147,7 +147,7 @@ tomcat_url    = "http://13.x.x.x:8080"
 ### 1. Jenkins EC2
 - Launch c7i.flex.large, Ubuntu 22.04, run `scripts/jenkins-setup.sh` as user-data
 - Install plugins: **Maven Integration**, **SonarQube Scanner**, **Nexus Artifact Uploader**, **Deploy to container**
-- Configure: JDK17, Maven3 under Global Tool Configuration
+- Configure: JDK21, Maven3 under Global Tool Configuration
 - Add credentials: `nexus-credentials`, `tomcat-credentials` in Jenkins Credentials Manager
 - Add SonarQube server under Manage Jenkins → Configure System
 
@@ -221,8 +221,6 @@ tomcat_url    = "http://13.x.x.x:8080"
 | SonarQube takes too long to start | SonarQube needs at least 2GB RAM — ensure you are using c7i.flex.large or higher |
 | Tomcat deploy fails | Confirm `manager-script` role is assigned to the Tomcat user in `tomcat-users.xml` |
 | Jenkins can't reach SonarQube/Nexus | Verify Security Group inbound rules allow traffic from the Jenkins EC2 Security Group |
-
----
 
 ---
 
