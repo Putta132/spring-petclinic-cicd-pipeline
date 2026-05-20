@@ -54,10 +54,10 @@ Developer pushes code to GitHub
 
 | Server | Tool | EC2 Type | Port |
 |---|---|---|---|
-| Jenkins Server | Jenkins 2.x | c7i.flex.large | 8080 |
-| Code Quality Server | SonarQube 10.x | c7i.flex.large | 9000 |
-| Artifact Repository | Nexus OSS 3.x | c7i.flex.large | 8081 |
-| Application Server | Apache Tomcat 10.x | c7i.flex.large | 8080 |
+| Jenkins Server | Jenkins | c7i.flex.large | 8080 |
+| Code Quality Server | SonarQube | c7i.flex.large | 9000 |
+| Artifact Repository | Nexus | c7i.flex.large | 8081 |
+| Application Server | Tomcat | c7i.flex.large | 8080 |
 
 All EC2 instances deployed on **AWS ap-south-1** with least-privilege Security Groups — each tool only accepts traffic from the sources that need it.
 
@@ -84,9 +84,9 @@ spring-petclinic-cicd-pipeline/
 │   └── Jenkinsfile              # Declarative pipeline — all 7 stages
 ├── scripts/
 │   ├── jenkins-setup.sh         # EC2 user-data: Jenkins + Java + Maven
-│   ├── sonarqube-setup.sh       # EC2 user-data: SonarQube 10.x
-│   ├── nexus-setup.sh           # EC2 user-data: Nexus OSS 3.x
-│   └── tomcat-setup.sh          # EC2 user-data: Tomcat 10.x + Manager config
+│   ├── sonarqube-setup.sh       # EC2 user-data: SonarQube
+│   ├── nexus-setup.sh           # EC2 user-data: Nexus
+│   └── tomcat-setup.sh          # EC2 user-data: Tomcat + Manager config
 ├── terraform/
 │   ├── main.tf                  # VPC, SGs, 4 EC2 instances
 │   ├── variables.tf
