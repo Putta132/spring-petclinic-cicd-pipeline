@@ -1,31 +1,21 @@
 #!/bin/bash
-# ============================================================
-# Jenkins EC2 Bootstrap Script
-# Ubuntu 22.04 — installs Jenkins + Java + Maven + Git
-# ============================================================
 
-set -e
-exec > /var/log/jenkins-setup.log 2>&1
-
-echo "[$(date)] Starting Jenkins setup..."
-
-# --- Java 17 ---
-apt-get update -y
-apt-get install -y fontconfig openjdk-17-jre git
+# --- Java 21 ---
+sudo apt update -y
+sudo apt install -y openjdk-21-jdk
 
 # --- Maven ---
-apt-get install -y maven
+sudo apt install -y maven
 
 # --- Jenkins ---
-curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key | tee \
-    /usr/share/keyrings/jenkins-keyring.asc > /dev/null
+sudo wget -O /etc/apt/keyrings/jenkins-keyring.asc \
+  https://pkg.jenkins.io/debian-stable/jenkins.io-2026.key
+echo "deb [signed-by=/etc/apt/keyrings/jenkins-keyring.asc]" \
+  https://pkg.jenkins.io/debian-stable binary/ | sudo tee \
+  /etc/apt/sources.list.d/jenkins.list > /dev/null
+sudo apt update
+sudo apt install jenkins
 
-echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] \
-    https://pkg.jenkins.io/debian-stable binary/ | tee \
-    /etc/apt/sources.list.d/jenkins.list > /dev/null
-
-apt-get update -y
-apt-get install -y jenkins
 
 systemctl enable jenkins
 systemctl start jenkins
