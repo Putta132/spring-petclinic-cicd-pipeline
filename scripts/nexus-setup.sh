@@ -3,7 +3,7 @@
 # --- system update ---
 sudo apt update -y
 
-# --- Java 17 ---
+# --- Java 21 ---
 sudo apt install -y openjdk-21-jdk
 
 # --- Download Nexus ---
